@@ -6,7 +6,7 @@
       "description": "全球顶级通讯社，纯净客观的国际突发新闻事实。",
       "category": "国际时政",
       "language": "en",
-      "url": "http://localhost:1200/apnews/topics/apf-topnews",
+      "url": "/apnews/topics/apf-topnews",
       "fetch_strategy": "SCRAPE_WEB",
       "active": true
     },
@@ -16,7 +16,7 @@
       "description": "权威国际政经突发新闻，极速客观。",
       "category": "国际时政",
       "language": "en",
-      "url": "http://localhost:1200/reuters/world",
+      "url": "/reuters/world",
       "fetch_strategy": "SUMMARY_ONLY",
       "active": true
     },
@@ -36,7 +36,7 @@
       "description": "国内最顶尖的原创财经、宏观与时政调查。",
       "category": "商业深度",
       "language": "zh",
-      "url": "http://localhost:1200/caixin/latest",
+      "url": "/caixin/latest",
       "fetch_strategy": "SUMMARY_ONLY",
       "active": true
     },
@@ -46,7 +46,7 @@
       "description": "客观中立的华人视角国际与地缘新闻。",
       "category": "国际时政",
       "language": "zh",
-      "url": "http://localhost:1200/zaobao/realtime/world",
+      "url": "/zaobao/realtime/world",
       "fetch_strategy": "FULL_RSS",
       "active": true
     },
@@ -56,7 +56,7 @@
       "description": "国内高质量政经与社会热点追踪。",
       "category": "国内焦点",
       "language": "zh",
-      "url": "http://localhost:1200/thepaper/featured",
+      "url": "/thepaper/featured",
       "fetch_strategy": "FULL_RSS",
       "active": true
     },
@@ -66,7 +66,7 @@
       "description": "基于数据的国内商业与消费趋势洞察。",
       "category": "国内焦点",
       "language": "zh",
-      "url": "http://localhost:1200/yicai/dt/article",
+      "url": "/yicai/dt/article",
       "fetch_strategy": "FULL_RSS",
       "active": true
     }

@@ -34,6 +34,30 @@ DATA_DIR = PROJECT_ROOT / "data"
 
 HTTP_TIMEOUT = 15  # seconds for all outbound HTTP requests
 
+# RSSHub base URL — resolved from environment for deployment portability.
+# Feeds in feeds_config.json that use relative paths (e.g. "/apnews/...")
+# will be prefixed with this base URL at runtime.
+RSSHUB_BASE_URL = os.environ.get("RSSHUB_BASE_URL", "http://localhost:1200").rstrip("/")
+
+
+# ===========================================================================
+# URL Resolution
+# ===========================================================================
+def resolve_feed_url(raw_url: str) -> str:
+    """
+    Resolve a feed URL from the config.
+
+    - Relative paths (starting with ``/``) are prefixed with RSSHUB_BASE_URL.
+    - Full URLs (starting with ``http://`` or ``https://``) are returned as-is.
+
+    This allows feeds_config.json to remain environment-agnostic: RSSHub
+    routes are stored as paths, and the actual host is injected at runtime
+    via the RSSHUB_BASE_URL environment variable.
+    """
+    if raw_url.startswith("/"):
+        return f"{RSSHUB_BASE_URL}{raw_url}"
+    return raw_url
+
 
 # ===========================================================================
 # Configuration Loader
@@ -279,7 +303,7 @@ class RSSFetcher:
         for feed_cfg in feeds:
             feed_id = feed_cfg["id"]
             feed_name = feed_cfg.get("name", feed_id)
-            feed_url = feed_cfg["url"]
+            feed_url = resolve_feed_url(feed_cfg["url"])
             strategy_name = feed_cfg.get("fetch_strategy", "FULL_RSS")
             category = feed_cfg.get("category", "")
 

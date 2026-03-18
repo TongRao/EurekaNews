@@ -79,9 +79,29 @@ source .venv/bin/activate
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Run the service
+# 3. Configure RSSHub endpoint
+cp .env.example .env
+# Edit .env and set RSSHUB_BASE_URL to your RSSHub instance address
+
+# 4. Run the service
 python3 main.py
 # Runs an immediate fetch, then loops every 2 hours. Ctrl+C to stop.
+```
+
+## Configuration
+
+Feed URLs in `config/feeds_config.json` use **relative paths** for RSSHub routes (e.g., `/apnews/topics/apf-topnews`) and full URLs for direct RSS sources (e.g., WSJ). The RSSHub host is injected at runtime via environment variable, keeping the config portable across environments:
+
+| Environment | `RSSHUB_BASE_URL` |
+|---|---|
+| Local dev (RSSHub on same machine) | `http://localhost:1200` (default) |
+| Server via Tailscale | `http://100.x.x.x:1200` |
+| Docker same-host network | `http://rsshub:1200` |
+
+Set the variable in your `.env` file (gitignored) or export it directly:
+
+```bash
+export RSSHUB_BASE_URL=http://100.x.x.x:1200
 ```
 
 ## Project Structure
@@ -89,7 +109,7 @@ python3 main.py
 ```
 EurekaNews/
 ├── config/
-│   └── feeds_config.json    # Feed source configuration
+│   └── feeds_config.json    # Feed source configuration (paths + strategies)
 ├── data/                    # Auto-created at runtime (gitignored)
 │   ├── dedup.db             # SQLite dedup database
 │   └── raw_data_YYYYMMDD.jsonl
@@ -97,6 +117,7 @@ EurekaNews/
 │   └── rss_fetcher.py       # Core fetcher module
 ├── main.py                  # Entry point
 ├── requirements.txt         # Python dependencies
+├── .env.example             # Environment variable template
 └── .gitignore
 ```
 

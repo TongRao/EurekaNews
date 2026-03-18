@@ -10,10 +10,13 @@ main.py — Entry Point for the EurekaNews RSS Fetching Service
 import logging
 import sys
 
+from dotenv import load_dotenv
+load_dotenv()  # Load .env before any module reads os.environ
+
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
-from src.rss_fetcher import RSSFetcher
+from src.rss_fetcher import RSSFetcher, RSSHUB_BASE_URL
 
 
 def setup_logging() -> None:
@@ -41,6 +44,7 @@ def main() -> None:
 
     logger.info("=" * 60)
     logger.info("EurekaNews RSS Fetching Service starting up")
+    logger.info("RSSHUB_BASE_URL = %s", RSSHUB_BASE_URL)
     logger.info("=" * 60)
 
     fetcher = RSSFetcher()
