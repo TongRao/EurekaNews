@@ -17,9 +17,9 @@ A lightweight, robust RSS fetching service that powers the EurekaNews AI news ag
 
 ## Prerequisites — RSSHub
 
-本项目依赖 [RSSHub](https://docs.rsshub.app/) 作为统一的 RSS 源代理（默认监听 `localhost:1200`）。推荐使用 Docker Compose 部署。
+This project relies on [RSSHub](https://docs.rsshub.app/) as a unified RSS feed proxy (listening on `localhost:1200` by default). Docker Compose is the recommended way to deploy it.
 
-在项目根目录或服务器上创建 `docker-compose.yml`：
+Create a `docker-compose.yml` on your server or project root:
 
 ```yaml
 version: '3'
@@ -29,8 +29,8 @@ services:
         image: diygod/rsshub:latest
         restart: always
         ports:
-            # 将 100.x.x.x 替换为你的 Tailscale IP
-            # 这样 RSSHub 只在 Tailscale 内网监听，隔绝公网
+            # Replace 100.x.x.x with your Tailscale IP
+            # This ensures RSSHub only listens on your Tailscale private network
             - "100.x.x.x:1200:1200"
         environment:
             NODE_ENV: production
@@ -60,14 +60,14 @@ volumes:
 ```
 
 ```bash
-# 启动 RSSHub
+# Start RSSHub
 docker compose up -d
 
-# 验证运行状态
+# Verify it's running
 curl http://localhost:1200
 ```
 
-> **Note**: 如果不使用 Tailscale，可将端口配置简化为 `"1200:1200"`（仅本机访问）或 `"127.0.0.1:1200:1200"`。
+> **Note**: If you're not using Tailscale, simplify the port mapping to `"1200:1200"` or `"127.0.0.1:1200:1200"` for local-only access.
 
 ## Quick Start
 
