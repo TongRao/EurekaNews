@@ -1,0 +1,74 @@
+{
+  "feeds": [
+    {
+      "id": "ap_news_world",
+      "name": "AP News (美联社 - 国际焦点)",
+      "description": "全球顶级通讯社，纯净客观的国际突发新闻事实。",
+      "category": "国际时政",
+      "language": "en",
+      "url": "http://localhost:1200/apnews/topics/apf-topnews",
+      "fetch_strategy": "SCRAPE_WEB",
+      "active": true
+    },
+    {
+      "id": "reuters_world",
+      "name": "Reuters (路透社 - 国际新闻)",
+      "description": "权威国际政经突发新闻，极速客观。",
+      "category": "国际时政",
+      "language": "en",
+      "url": "http://localhost:1200/reuters/world",
+      "fetch_strategy": "SUMMARY_ONLY",
+      "active": true
+    },
+    {
+      "id": "wsj_en_world",
+      "name": "WSJ (华尔街日报 - 英文国际版)",
+      "description": "全球商业与地缘政治深度分析。",
+      "category": "商业深度",
+      "language": "en",
+      "url": "https://feeds.content.dowjones.io/public/rss/RSSWorldNews",
+      "fetch_strategy": "SUMMARY_ONLY",
+      "active": true
+    },
+    {
+      "id": "caixin_latest",
+      "name": "财新网 (最新文章)",
+      "description": "国内最顶尖的原创财经、宏观与时政调查。",
+      "category": "商业深度",
+      "language": "zh",
+      "url": "http://localhost:1200/caixin/latest",
+      "fetch_strategy": "SUMMARY_ONLY",
+      "active": true
+    },
+    {
+      "id": "zaobao_world",
+      "name": "联合早报 (国际即时)",
+      "description": "客观中立的华人视角国际与地缘新闻。",
+      "category": "国际时政",
+      "language": "zh",
+      "url": "http://localhost:1200/zaobao/realtime/world",
+      "fetch_strategy": "FULL_RSS",
+      "active": true
+    },
+    {
+      "id": "the_paper_featured",
+      "name": "澎湃新闻 (首页头条)",
+      "description": "国内高质量政经与社会热点追踪。",
+      "category": "国内焦点",
+      "language": "zh",
+      "url": "http://localhost:1200/thepaper/featured",
+      "fetch_strategy": "FULL_RSS",
+      "active": true
+    },
+    {
+      "id": "yicai_dt",
+      "name": "第一财经 (DT商业观察)",
+      "description": "基于数据的国内商业与消费趋势洞察。",
+      "category": "国内焦点",
+      "language": "zh",
+      "url": "http://localhost:1200/yicai/dt/article",
+      "fetch_strategy": "FULL_RSS",
+      "active": true
+    }
+  ]
+}
