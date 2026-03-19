@@ -1,6 +1,7 @@
 feedparser>=6.0
 beautifulsoup4>=4.12
 trafilatura>=1.6
+lxml_html_clean>=0.4
 apscheduler>=3.10,<4.0
 requests>=2.31
 python-dotenv>=1.0
