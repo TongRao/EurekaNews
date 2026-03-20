@@ -17,90 +17,56 @@ A robust backend service that powers the EurekaNews AI aggregation system. It pe
 
 ---
 
-## Prerequisites
+## 1. Configuration (Important)
 
-This backend requires two external services to function:
-1. **RSSHub** (for unified feed proxying)
-2. **MongoDB** (for data storage)
+Before running the service, you must configure the infrastructure and environment variables.
 
-We recommend using Docker Compose. Create a `docker-compose.yml` on your server:
+### 1.1 Infrastructure Setup (`docker-compose.yml`)
 
-```yaml
-version: '3'
+The provided `docker-compose.yml` configures **RSSHub** (for feed proxying) and **MongoDB** (for database storage).
 
-services:
-    rsshub:
-        image: diygod/rsshub:latest
-        restart: always
-        ports:
-            # Replace 127.0.0.1 with your Tailscale IP if needed
-            - "127.0.0.1:1200:1200"
-        environment:
-            NODE_ENV: production
-            CACHE_TYPE: redis
-            REDIS_URL: 'redis://redis:6379/'
-            PUPPETEER_WS_ENDPOINT: 'ws://browserless:3000'
-        depends_on:
-            - redis
-            - browserless
+- Open `docker-compose.yml`.
+- Locate the `mongodb` service block and **change the default username and password**:
+  ```yaml
+  MONGO_INITDB_ROOT_USERNAME: your_username
+  MONGO_INITDB_ROOT_PASSWORD: your_strong_password
+  ```
+- Make sure you save the file so your database is secure.
 
-    browserless:
-        image: browserless/chrome:latest
-        restart: always
-        ulimits:
-            core:
-                hard: 0
-                soft: 0
+### 1.2 Environment Variables (`.env`)
 
-    redis:
-        image: redis:alpine
-        restart: always
-        volumes:
-            - redis-data:/data
-
-    mongodb:
-        image: mongo:latest
-        restart: always
-        environment:
-            MONGO_INITDB_ROOT_USERNAME: ai_admin
-            # Change this password!
-            MONGO_INITDB_ROOT_PASSWORD: your_strong_password_2026
-        ports:
-            - "127.0.0.1:27017:27017"
-        volumes:
-            - mongodb-data:/data/db
-
-volumes:
-    redis-data:
-    mongodb-data:
-```
-
-```bash
-docker compose up -d
-```
-
----
-
-## Configuration
-
-Copy the example environment file:
+Copy the example configuration to create your active `.env` file:
 ```bash
 cp .env.example .env
 ```
 
-Edit the `.env` file to configure your endpoints and credentials:
+Open `.env` and configure your endpoints and credentials:
 
 | Variable | Description | Example |
 |---|---|---|
 | `RSSHUB_BASE_URL` | Base URL of your RSSHub instance | `http://100.x.x.x:1200` |
-| `MONGODB_URL` | Connection string matching your docker-compose | `mongodb://ai_admin:pass@127.0.0.1:27017` |
+| `MONGODB_URL` | Connection string **matching your docker-compose username and password** | `mongodb://your_username:your_strong_password@127.0.0.1:27017` |
 | `LLM_PROVIDER` | `ollama` or `openai` | `ollama` |
 | `OLLAMA_BASE_URL` | Base URL of your Ollama instance | `http://100.y.y.y:11434` |
 | `OPENAI_API_KEY` | Key for commercial APIs (if provider=openai) | `sk-...` |
 
 ---
 
-## Quick Start
+## 2. Running the Infrastructure
+
+Once configured, start the background infrastructure (RSSHub, Redis, MongoDB, Browserless) in detached mode:
+
+```bash
+docker compose up -d
+```
+
+Verify that the containers are running with `docker ps`.
+
+---
+
+## 3. Running the FastAPI Application
+
+Now that the infrastructure is up, start the main backend application:
 
 ```bash
 # 1. Create and activate virtual environment

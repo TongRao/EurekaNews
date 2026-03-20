@@ -34,9 +34,9 @@ services:
         image: mongo:latest
         restart: always
         environment:
-            MONGO_INITDB_ROOT_USERNAME: ai_admin
-            # Change this password and keep it in sync with MONGODB_URL in .env
-            MONGO_INITDB_ROOT_PASSWORD: your_strong_password_2026
+            # Change user name and password and keep it in sync with MONGODB_URL in .env
+            MONGO_INITDB_ROOT_USERNAME: your_username
+            MONGO_INITDB_ROOT_PASSWORD: your_strong_password
         ports:
             - "127.0.0.1:27017:27017"
         volumes:

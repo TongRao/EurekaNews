@@ -213,6 +213,8 @@ async def run_fetch_cycle() -> dict[str, int]:
     """
     Execute one full fetch cycle: load config → iterate feeds →
     parse RSS → insert to MongoDB (skip duplicates via unique index).
+    After fetching, automatically triggers LLM analysis on all
+    unanalyzed articles in the database.
 
     Returns a summary dict: {"new": N, "skipped": M}.
     """
@@ -268,4 +270,20 @@ async def run_fetch_cycle() -> dict[str, int]:
             logger.error("Feed %s (%s) FAILED — skipping. Error: %s", feed_name, feed_url, exc, exc_info=True)
 
     logger.info("Fetch cycle complete. Total new: %d, Total skipped: %d.", total_new, total_skipped)
+
+    # --- Auto-trigger LLM analysis on all unanalyzed articles ---
+    from app.services.news_analyzer import analyze_articles
+
+    logger.info("=" * 60)
+    logger.info("Auto-triggering LLM analysis for unanalyzed articles...")
+    logger.info("=" * 60)
+    try:
+        result = await analyze_articles()
+        logger.info(
+            "LLM analysis complete. Analyzed: %d, Failed: %d, Skipped: %d.",
+            result["analyzed"], result["failed"], result["skipped"],
+        )
+    except Exception as exc:
+        logger.error("LLM analysis failed: %s", exc, exc_info=True)
+
     return {"new": total_new, "skipped": total_skipped}

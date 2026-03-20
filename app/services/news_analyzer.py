@@ -18,32 +18,32 @@ logger = logging.getLogger("eureka.news_analyzer")
 # ---------------------------------------------------------------------------
 # System prompt for the LLM — instructs it to return structured JSON.
 # ---------------------------------------------------------------------------
-ANALYSIS_SYSTEM_PROMPT = """你是一个专业的新闻分析师。请严格按照以下JSON格式分析新闻内容，不要添加任何额外说明或文字，只返回JSON：
+ANALYSIS_SYSTEM_PROMPT = """# Role
+你是一个高效的新闻简报 AI，专门为忙碌的专业人士提取核心情报。 
 
+# Task
+将输入的新闻内容浓缩为一份极简简报，注意输出结果为纯粹的json，不要包含其他任何东西。  
+
+# Output Structure (严格执行，确保输出格式是纯json) 
 {
-    "核心概括": "用一句话概括这条新闻的核心内容",
+    "核心概括": "一句话概括核心和要点。",
+    "简报": "100字左右说清楚整件事情。",
     "三个关键事实": {
         "谁做了什么": "主要行动方及其行为",
-        "为何重要": "这条新闻为什么值得关注",
-        "后续动态": "可能的后续发展或影响"
+        "为何重要": "核心影响及冲突点",
+        "后续动态": "最新进展或下一步走向"
     },
     "利益相关方": {
-        "相关方名称1": "该方的立场或受到的影响",
-        "相关方名称2": "该方的立场或受到的影响"
+        "方A": "该方的立场或受到的影响",
+        "方B": "该方的立场或受到的影响"
     }
-}
-
-要求：
-1. 必须严格返回上述JSON结构
-2. "利益相关方"至少包含2个相关方
-3. 用中文回答
-4. 不要在JSON外添加任何文字"""
+}"""
 
 
 async def analyze_articles(
     start: datetime | None = None,
     end: datetime | None = None,
-    limit: int = 50,
+    limit: int = 0,
     llm_client: BaseLLMClient | None = None,
 ) -> dict[str, int]:
     """
@@ -59,7 +59,7 @@ async def analyze_articles(
     Args:
         start: Start of time range (optional, defaults to all).
         end: End of time range (optional, defaults to all).
-        limit: Maximum number of articles to analyze in one batch.
+        limit: Maximum number of articles to analyze. 0 = no limit.
         llm_client: LLM client instance (auto-created if not provided).
 
     Returns:
@@ -81,8 +81,10 @@ async def analyze_articles(
             time_filter["$lte"] = end
         query["fetch_time"] = time_filter
 
-    cursor = collection.find(query).sort("fetch_time", -1).limit(limit)
-    articles = await cursor.to_list(length=limit)
+    cursor = collection.find(query).sort("fetch_time", -1)
+    if limit > 0:
+        cursor = cursor.limit(limit)
+    articles = await cursor.to_list(length=limit if limit > 0 else None)
 
     if not articles:
         logger.info("No unanalyzed articles found in the given range.")
@@ -134,7 +136,7 @@ async def analyze_articles(
             )
 
             analyzed += 1
-            logger.info("Analyzed: '%s'", title[:60])
+            logger.info("Analyzed [%d/%d]: '%s'", analyzed + failed + skipped, len(articles), title[:60])
 
         except Exception as exc:
             logger.error("LLM analysis failed for '%s': %s", title[:60], exc, exc_info=True)
@@ -159,7 +161,6 @@ def _parse_and_validate(raw_response: str, title: str) -> LLMAnalysis | None:
     text = raw_response.strip()
     if text.startswith("```"):
         lines = text.split("\n")
-        # Remove first and last lines (```json and ```)
         lines = [l for l in lines if not l.strip().startswith("```")]
         text = "\n".join(lines)
 

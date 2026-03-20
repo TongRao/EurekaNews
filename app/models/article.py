@@ -24,6 +24,7 @@ class KeyFacts(BaseModel):
 class LLMAnalysis(BaseModel):
     """Structured analysis result returned by the LLM."""
     core_summary: str = Field(..., alias="核心概括")
+    briefing: str = Field(..., alias="简报")
     key_facts: KeyFacts = Field(..., alias="三个关键事实")
     stakeholders: dict[str, str] = Field(..., alias="利益相关方")
 
