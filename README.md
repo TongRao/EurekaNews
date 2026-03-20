@@ -1,25 +1,29 @@
 # EurekaNews 📰
 
-AI-powered news aggregation system — RSS data pipeline layer.
+AI-powered news aggregation system — v2 FastAPI Backend.
 
 ## Overview
 
-A lightweight, robust RSS fetching service that powers the EurekaNews AI news aggregation system. It periodically pulls articles from configured RSS sources, intelligently extracts full-text content, deduplicates, and persists raw data for downstream AI processing.
+A robust backend service that powers the EurekaNews AI aggregation system. It periodically pulls articles from configured RSS sources, persists raw data to MongoDB, and provides REST APIs to trigger and retrieve AI-powered news analysis using local (Ollama) or commercial (OpenAI-compatible) LLMs.
 
 ## Features
 
-- **Configuration-driven** — all feed sources managed via `config/feeds_config.json`
-- **Three fetch strategies** — `FULL_RSS` (inline content), `SCRAPE_WEB` (full article extraction), `SUMMARY_ONLY` (paywalled sources)
-- **SQLite deduplication** — prevents duplicate article storage
-- **Daily JSONL output** — appends to `data/raw_data_YYYYMMDD.jsonl`
-- **Scheduled execution** — APScheduler runs fetch cycles every 2 hours
-- **Fault-tolerant** — per-feed error isolation; failures never crash the service
+- **FastAPI Core** — Async native, high-performance web server with auto-generated OpenAPI docs.
+- **Background Fetching** — APScheduler integration runs RSS fetch cycles automatically (default every 2h).
+- **MongoDB Storage** — Replaces fragile flat files; provides fast time-range querying and robust deduplication.
+- **Provider-Agnostic LLM** — Built-in support for local Ollama deployments or OpenAI-compatible commercial APIs.
+- **Structured AI Analysis** — Asynchronous LLM pipeline that extracts key facts, summaries, and stakeholders into structured JSON.
+- **Configuration-Driven** — Feed sources managed via JSON, environment configuration via `.env`.
 
-## Prerequisites — RSSHub
+---
 
-This project relies on [RSSHub](https://docs.rsshub.app/) as a unified RSS feed proxy (listening on `localhost:1200` by default). Docker Compose is the recommended way to deploy it.
+## Prerequisites
 
-Create a `docker-compose.yml` on your server or project root:
+This backend requires two external services to function:
+1. **RSSHub** (for unified feed proxying)
+2. **MongoDB** (for data storage)
+
+We recommend using Docker Compose. Create a `docker-compose.yml` on your server:
 
 ```yaml
 version: '3'
@@ -29,9 +33,8 @@ services:
         image: diygod/rsshub:latest
         restart: always
         ports:
-            # Replace 100.x.x.x with your Tailscale IP
-            # This ensures RSSHub only listens on your Tailscale private network
-            - "100.x.x.x:1200:1200"
+            # Replace 127.0.0.1 with your Tailscale IP if needed
+            - "127.0.0.1:1200:1200"
         environment:
             NODE_ENV: production
             CACHE_TYPE: redis
@@ -45,9 +48,9 @@ services:
         image: browserless/chrome:latest
         restart: always
         ulimits:
-          core:
-            hard: 0
-            soft: 0
+            core:
+                hard: 0
+                soft: 0
 
     redis:
         image: redis:alpine
@@ -55,88 +58,104 @@ services:
         volumes:
             - redis-data:/data
 
+    mongodb:
+        image: mongo:latest
+        restart: always
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: ai_admin
+            # Change this password!
+            MONGO_INITDB_ROOT_PASSWORD: your_strong_password_2026
+        ports:
+            - "127.0.0.1:27017:27017"
+        volumes:
+            - mongodb-data:/data/db
+
 volumes:
     redis-data:
+    mongodb-data:
 ```
 
 ```bash
-# Start RSSHub
 docker compose up -d
-
-# Verify it's running
-curl http://localhost:1200
 ```
 
-> **Note**: If you're not using Tailscale, simplify the port mapping to `"1200:1200"` or `"127.0.0.1:1200:1200"` for local-only access.
+---
+
+## Configuration
+
+Copy the example environment file:
+```bash
+cp .env.example .env
+```
+
+Edit the `.env` file to configure your endpoints and credentials:
+
+| Variable | Description | Example |
+|---|---|---|
+| `RSSHUB_BASE_URL` | Base URL of your RSSHub instance | `http://100.x.x.x:1200` |
+| `MONGODB_URL` | Connection string matching your docker-compose | `mongodb://ai_admin:pass@127.0.0.1:27017` |
+| `LLM_PROVIDER` | `ollama` or `openai` | `ollama` |
+| `OLLAMA_BASE_URL` | Base URL of your Ollama instance | `http://100.y.y.y:11434` |
+| `OPENAI_API_KEY` | Key for commercial APIs (if provider=openai) | `sk-...` |
+
+---
 
 ## Quick Start
 
 ```bash
-# 1. Create virtual environment
+# 1. Create and activate virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
 
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Configure RSSHub endpoint
-cp .env.example .env
-# Edit .env and set RSSHUB_BASE_URL to your RSSHub instance address
-
-# 4. Run the service
-python3 main.py
-# Runs an immediate fetch, then loops every 2 hours. Ctrl+C to stop.
+# 3. Start the FastAPI server
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-## Configuration
+*Note: On startup, the server automatically runs an initial RSS fetch cycle and connects to MongoDB. You can access the interactive API documentation at `http://localhost:8000/docs`.*
 
-Feed URLs in `config/feeds_config.json` use **relative paths** for RSSHub routes (e.g., `/apnews/topics/apf-topnews`) and full URLs for direct RSS sources (e.g., WSJ). The RSSHub host is injected at runtime via environment variable, keeping the config portable across environments:
+---
 
-| Environment | `RSSHUB_BASE_URL` |
-|---|---|
-| Local dev (RSSHub on same machine) | `http://localhost:1200` (default) |
-| Server via Tailscale | `http://100.x.x.x:1200` |
-| Docker same-host network | `http://rsshub:1200` |
+## API Endpoints
 
-Set the variable in your `.env` file (gitignored) or export it directly:
+### Articles
 
-```bash
-export RSSHUB_BASE_URL=http://100.x.x.x:1200
-```
+*All endpoints accept `start` / `end` (ISO 8601), `category`, `feed_id`, `skip`, and `limit` query parameters.*
+
+- `GET /api/articles/titles` — Lightweight list of articles within a time range.
+- `GET /api/articles/summaries` — Returns titles + full text content.
+- `GET /api/articles/full` — Returns all fields, including completed LLM analysis.
+
+### Analysis
+
+- `POST /api/analysis/run` — Triggers a background job to run LLM analysis on unanalyzed articles in the specified time range. Responds immediately.
+- `GET /api/analysis/status` — Returns the count of analyzed vs. unanalyzed articles.
+
+---
 
 ## Project Structure
 
 ```
 EurekaNews/
+├── app/
+│   ├── main.py              # FastAPI application & lifespan
+│   ├── core/
+│   │   ├── config.py        # Environment variables (Pydantic Settings)
+│   │   └── database.py      # Async MongoDB connection
+│   ├── models/
+│   │   └── article.py       # Pydantic schemas (+ LLM JSON aliases)
+│   ├── routers/
+│   │   ├── articles.py      # Article query endpoints
+│   │   └── analysis.py      # Analysis trigger endpoints
+│   └── services/
+│       ├── rss_fetcher.py   # RSS fetching & processing logic
+│       ├── llm_client.py    # Abstract Ollama/OpenAI client
+│       └── news_analyzer.py # LLM prompting & JSON validation
 ├── config/
-│   └── feeds_config.json    # Feed source configuration (paths + strategies)
-├── data/                    # Auto-created at runtime (gitignored)
-│   ├── dedup.db             # SQLite dedup database
-│   └── raw_data_YYYYMMDD.jsonl
-├── src/
-│   └── rss_fetcher.py       # Core fetcher module
-├── main.py                  # Entry point
-├── requirements.txt         # Python dependencies
-├── .env.example             # Environment variable template
-└── .gitignore
+│   └── feeds_config.json    # RSS feed configurations
+├── docker-compose.yml       # Infrastructure (RSSHub + MongoDB)
+├── .env.example             # Configuration template
+└── requirements.txt         # Python dependencies
 ```
-
-## Output Format
-
-Each line in the JSONL output is a JSON object:
-
-```json
-{
-  "fetch_id": "UUID",
-  "feed_id": "ap_news_world",
-  "category": "国际时政",
-  "title": "Article title",
-  "link": "https://...",
-  "content": "Cleaned full-text content",
-  "fetch_time": "2026-03-17T01:36:31+00:00"
-}
-```
-
-## Tech Stack
-
-Python 3.10+ · feedparser · BeautifulSoup4 · trafilatura · APScheduler
