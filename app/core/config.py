@@ -26,16 +26,16 @@ class Settings(BaseSettings):
     mongodb_db_name: str = "eureka_news"
 
     # --- LLM ---
-    llm_provider: str = "ollama"  # "ollama" or "openai"
+    llm_provider: str = "ollama"  # "ollama" or "others"
 
     # Ollama
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen3:14b"
 
-    # OpenAI-compatible (for future commercial APIs)
-    openai_api_key: str = ""
-    openai_base_url: str = "https://api.openai.com/v1"
-    openai_model: str = "gpt-4o-mini"
+    # Others (for any OpenAI-compatible commercial APIs like DeepSeek, Qwen, etc.)
+    others_api_key: str = ""
+    others_base_url: str = "https://api.openai.com/v1"
+    others_model: str = "gpt-4o-mini"
 
     # --- Scheduler ---
     fetch_interval_hours: int = 2

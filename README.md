@@ -19,46 +19,29 @@ A robust backend service that powers the EurekaNews AI aggregation system. It pe
 
 ## 1. Configuration (Important)
 
-Before running the service, you must configure the infrastructure and environment variables.
+We have consolidated all configuration into a single environment file. The `docker-compose.yml` file is now completely static and reads credentials directly from your environment to prevent git conflicts.
 
-### 1.1 Infrastructure Setup (`docker-compose.yml`)
-
-The provided `docker-compose.yml` configures **RSSHub** (for feed proxying), **MongoDB** (for database storage), and **Mongo-Express** (for a web GUI).
-
-1. Open `docker-compose.yml`.
-2. Locate the `mongodb` service block and **change the default credentials**:
-   ```yaml
-   MONGO_INITDB_ROOT_USERNAME: your_username
-   MONGO_INITDB_ROOT_PASSWORD: your_strong_password_2026
-   ```
-3. Locate the `mongo-express` service block and **ensure these three variables match your MongoDB credentials exactly**:
-   ```yaml
-   ME_CONFIG_MONGODB_ADMINUSERNAME: your_username
-   ME_CONFIG_MONGODB_ADMINPASSWORD: your_strong_password_2026
-   ME_CONFIG_MONGODB_URL: mongodb://your_username:your_strong_password_2026@mongodb:27017/
-   ```
-4. Optional: In the same `mongo-express` block, change the Web UI login credentials to secure your browser access:
-   ```yaml
-   ME_CONFIG_BASICAUTH_USERNAME: admin
-   ME_CONFIG_BASICAUTH_PASSWORD: password  # <--- Change this to a secure web password
-   ```
-
-### 1.2 Environment Variables (`.env`)
+### 1.1 Environment Setup (`.env`)
 
 Copy the example configuration to create your active `.env` file:
 ```bash
 cp .env.example .env
 ```
 
-Open `.env` and configure your endpoints and credentials:
+Open `.env` and configure your credentials and endpoints:
 
 | Variable | Description | Example |
 |---|---|---|
 | `RSSHUB_BASE_URL` | Base URL of your RSSHub instance | `http://100.x.x.x:1200` |
-| `MONGODB_URL` | Connection string **matching your docker-compose username and password** | `mongodb://your_username:your_strong_password@127.0.0.1:27017` |
-| `LLM_PROVIDER` | `ollama` or `openai` | `ollama` |
+| `MONGO_INITDB_ROOT_USERNAME` | MongoDB superuser username | `ai_admin` |
+| `MONGO_INITDB_ROOT_PASSWORD` | MongoDB superuser password (**Change this!**) | `SuperSecret2026` |
+| `MONGODB_URL` | MongoDB Connection URI (interpolates the above) | `mongodb://${MONGO_INITDB_ROOT_USERNAME}...` |
+| `MONGO_EXPRESS_USERNAME` | Web UI login username for viewing the database | `admin` |
+| `MONGO_EXPRESS_PASSWORD` | Web UI login password for viewing the database | `my_secure_web_pass` |
+| `LLM_PROVIDER` | `ollama` or `others` | `ollama` |
 | `OLLAMA_BASE_URL` | Base URL of your Ollama instance | `http://100.y.y.y:11434` |
-| `OPENAI_API_KEY` | Key for commercial APIs (if provider=openai) | `sk-...` |
+| `OTHERS_API_KEY` | Key for commercial APIs (if provider=others) | `sk-...` |
+| `OTHERS_BASE_URL` | Base URL of your commercial API (e.g. DeepSeek, Kimi) | `https://api.deepseek.com/v1` |
 
 ---
 

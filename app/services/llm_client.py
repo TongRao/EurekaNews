@@ -72,11 +72,11 @@ class OllamaClient(BaseLLMClient):
 
 
 # ===========================================================================
-# OpenAI-Compatible Client
+# Others (OpenAI-Compatible Client)
 # ===========================================================================
-class OpenAIClient(BaseLLMClient):
+class OthersClient(BaseLLMClient):
     """
-    Client for any OpenAI-compatible API (OpenAI, DeepSeek, etc.).
+    Client for any OpenAI-compatible API (OpenAI, DeepSeek, Kimi, etc.).
     Calls POST /chat/completions with Bearer token auth.
     """
 
@@ -84,7 +84,7 @@ class OpenAIClient(BaseLLMClient):
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.model = model
-        logger.info("OpenAIClient initialized: %s (model: %s)", self.base_url, self.model)
+        logger.info("OthersClient initialized: %s (model: %s)", self.base_url, self.model)
 
     async def chat(self, system_prompt: str, user_content: str) -> str:
         url = f"{self.base_url}/chat/completions"
@@ -120,7 +120,7 @@ def create_llm_client(settings: Settings | None = None) -> BaseLLMClient:
     Create the appropriate LLM client based on LLM_PROVIDER setting.
 
     Returns:
-        An instance of OllamaClient or OpenAIClient.
+        An instance of OllamaClient or OthersClient.
     """
     if settings is None:
         settings = get_settings()
@@ -132,13 +132,13 @@ def create_llm_client(settings: Settings | None = None) -> BaseLLMClient:
             base_url=settings.ollama_base_url,
             model=settings.ollama_model,
         )
-    elif provider == "openai":
-        if not settings.openai_api_key:
-            raise ValueError("OPENAI_API_KEY is required when LLM_PROVIDER=openai")
-        return OpenAIClient(
-            base_url=settings.openai_base_url,
-            api_key=settings.openai_api_key,
-            model=settings.openai_model,
+    elif provider == "others":
+        if not settings.others_api_key:
+            raise ValueError("OTHERS_API_KEY is required when LLM_PROVIDER=others")
+        return OthersClient(
+            base_url=settings.others_base_url,
+            api_key=settings.others_api_key,
+            model=settings.others_model,
         )
     else:
-        raise ValueError(f"Unknown LLM_PROVIDER: '{provider}'. Must be 'ollama' or 'openai'.")
+        raise ValueError(f"Unknown LLM_PROVIDER: '{provider}'. Must be 'ollama' or 'others'.")
