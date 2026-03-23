@@ -23,15 +23,25 @@ Before running the service, you must configure the infrastructure and environmen
 
 ### 1.1 Infrastructure Setup (`docker-compose.yml`)
 
-The provided `docker-compose.yml` configures **RSSHub** (for feed proxying) and **MongoDB** (for database storage).
+The provided `docker-compose.yml` configures **RSSHub** (for feed proxying), **MongoDB** (for database storage), and **Mongo-Express** (for a web GUI).
 
-- Open `docker-compose.yml`.
-- Locate the `mongodb` service block and **change the default username and password**:
-  ```yaml
-  MONGO_INITDB_ROOT_USERNAME: your_username
-  MONGO_INITDB_ROOT_PASSWORD: your_strong_password
-  ```
-- Make sure you save the file so your database is secure.
+1. Open `docker-compose.yml`.
+2. Locate the `mongodb` service block and **change the default credentials**:
+   ```yaml
+   MONGO_INITDB_ROOT_USERNAME: your_username
+   MONGO_INITDB_ROOT_PASSWORD: your_strong_password_2026
+   ```
+3. Locate the `mongo-express` service block and **ensure these three variables match your MongoDB credentials exactly**:
+   ```yaml
+   ME_CONFIG_MONGODB_ADMINUSERNAME: your_username
+   ME_CONFIG_MONGODB_ADMINPASSWORD: your_strong_password_2026
+   ME_CONFIG_MONGODB_URL: mongodb://your_username:your_strong_password_2026@mongodb:27017/
+   ```
+4. Optional: In the same `mongo-express` block, change the Web UI login credentials to secure your browser access:
+   ```yaml
+   ME_CONFIG_BASICAUTH_USERNAME: admin
+   ME_CONFIG_BASICAUTH_PASSWORD: password  # <--- Change this to a secure web password
+   ```
 
 ### 1.2 Environment Variables (`.env`)
 
@@ -54,13 +64,19 @@ Open `.env` and configure your endpoints and credentials:
 
 ## 2. Running the Infrastructure
 
-Once configured, start the background infrastructure (RSSHub, Redis, MongoDB, Browserless) in detached mode:
+Once configured, start the background infrastructure (RSSHub, Redis, MongoDB, Mongo-Express, Browserless) in detached mode:
 
 ```bash
 docker compose up -d
 ```
 
 Verify that the containers are running with `docker ps`.
+
+**🔑 Viewing your Data:**
+We included `mongo-express` in the stack so you can view your MongoDB data natively in your browser.
+1. Visit `http://127.0.0.1:8081` in your browser.
+2. Login with Username: `admin` | Password: `password` (configurable in `docker-compose.yml`).
+3. Click into the `eureka_news` database and then the `articles` collection to see your fetched feeds and LLM analysis results.
 
 ---
 
