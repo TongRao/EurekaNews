@@ -115,6 +115,7 @@ async def analyze_articles(
             raw_response = await llm_client.chat(
                 system_prompt=ANALYSIS_SYSTEM_PROMPT,
                 user_content=user_input,
+                json_mode=True,
             )
 
             # Parse and validate the JSON response

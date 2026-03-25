@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     # --- Scheduler ---
     fetch_interval_hours: int = 2
 
+    # --- Telegram ---
+    telegram_bot_token: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

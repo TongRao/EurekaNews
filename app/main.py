@@ -1,8 +1,8 @@
 """
 main.py — FastAPI Application Entry Point for EurekaNews
 =========================================================
-Combines the FastAPI web server with APScheduler for periodic RSS fetching.
-All components are initialized during the lifespan context.
+Combines the FastAPI web server with APScheduler for periodic RSS fetching
+and Telegram bot for user interaction.
 
 Run with:
     uvicorn app.main:app --host 0.0.0.0 --port 8000
@@ -20,6 +20,7 @@ from app.core.config import get_settings
 from app.core.database import connect_db, close_db
 from app.routers import articles, analysis
 from app.services.rss_fetcher import run_fetch_cycle
+from app.services.telegram_bot import start_telegram_bot, stop_telegram_bot
 
 
 # ---------------------------------------------------------------------------
@@ -38,6 +39,7 @@ def setup_logging() -> None:
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("trafilatura").setLevel(logging.WARNING)
     logging.getLogger("feedparser").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 setup_logging()
@@ -51,8 +53,8 @@ logger = logging.getLogger("eureka.main")
 async def lifespan(app: FastAPI):
     """
     Application lifespan manager:
-    - Startup: connect MongoDB, run initial fetch, start scheduler.
-    - Shutdown: stop scheduler, close MongoDB.
+    - Startup: connect MongoDB, start Telegram bot, run initial fetch, start scheduler.
+    - Shutdown: stop scheduler, stop Telegram bot, close MongoDB.
     """
     settings = get_settings()
 
@@ -61,10 +63,14 @@ async def lifespan(app: FastAPI):
     logger.info("RSSHUB_BASE_URL = %s", settings.rsshub_base_url)
     logger.info("LLM_PROVIDER    = %s", settings.llm_provider)
     logger.info("MongoDB DB      = %s", settings.mongodb_db_name)
+    logger.info("Telegram Bot    = %s", "ENABLED" if settings.telegram_bot_token else "DISABLED")
     logger.info("=" * 60)
 
     # --- Connect to MongoDB ---
     await connect_db()
+
+    # --- Start Telegram bot ---
+    await start_telegram_bot()
 
     # --- Run initial fetch cycle ---
     logger.info("Running initial RSS fetch cycle...")
@@ -90,6 +96,7 @@ async def lifespan(app: FastAPI):
     # --- Shutdown ---
     logger.info("Shutting down scheduler...")
     scheduler.shutdown(wait=False)
+    await stop_telegram_bot()
     await close_db()
     logger.info("EurekaNews Server stopped. Goodbye!")
 
@@ -99,8 +106,8 @@ async def lifespan(app: FastAPI):
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="EurekaNews API",
-    description="AI-powered news aggregation — RSS fetching, storage, and LLM analysis.",
-    version="2.0.0",
+    description="AI-powered news aggregation — RSS fetching, storage, LLM analysis, and Telegram bot.",
+    version="3.0.0",
     lifespan=lifespan,
 )
 
@@ -115,5 +122,5 @@ async def health_check():
     return {
         "service": "EurekaNews",
         "status": "running",
-        "version": "2.0.0",
+        "version": "3.0.0",
     }

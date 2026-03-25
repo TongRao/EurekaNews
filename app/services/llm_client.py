@@ -1,11 +1,10 @@
 """
-llm_client.py — Abstract LLM Client with Ollama & OpenAI Support
+llm_client.py — Abstract LLM Client with Ollama & Others Support
 =================================================================
 Provider-agnostic interface for calling LLMs. Supports local Ollama
 deployments and any OpenAI-compatible commercial API.
 """
 
-import json
 import logging
 from abc import ABC, abstractmethod
 
@@ -23,13 +22,19 @@ class BaseLLMClient(ABC):
     """Interface that all LLM providers must implement."""
 
     @abstractmethod
-    async def chat(self, system_prompt: str, user_content: str) -> str:
+    async def chat(
+        self,
+        system_prompt: str,
+        user_content: str,
+        json_mode: bool = False,
+    ) -> str:
         """
         Send a chat request and return the raw text response.
 
         Args:
             system_prompt: Instructions for the LLM (role: system).
             user_content: The actual content to process (role: user).
+            json_mode: If True, force the LLM to return valid JSON.
 
         Returns:
             Raw text response from the LLM.
@@ -51,7 +56,12 @@ class OllamaClient(BaseLLMClient):
         self.model = model
         logger.info("OllamaClient initialized: %s (model: %s)", self.base_url, self.model)
 
-    async def chat(self, system_prompt: str, user_content: str) -> str:
+    async def chat(
+        self,
+        system_prompt: str,
+        user_content: str,
+        json_mode: bool = False,
+    ) -> str:
         url = f"{self.base_url}/api/chat"
         payload = {
             "model": self.model,
@@ -60,8 +70,11 @@ class OllamaClient(BaseLLMClient):
                 {"role": "user", "content": user_content},
             ],
             "stream": False,
-            "format": "json",
         }
+
+        # Only force JSON output when explicitly requested
+        if json_mode:
+            payload["format"] = "json"
 
         async with httpx.AsyncClient(timeout=120.0) as client:
             resp = await client.post(url, json=payload)
@@ -86,7 +99,12 @@ class OthersClient(BaseLLMClient):
         self.model = model
         logger.info("OthersClient initialized: %s (model: %s)", self.base_url, self.model)
 
-    async def chat(self, system_prompt: str, user_content: str) -> str:
+    async def chat(
+        self,
+        system_prompt: str,
+        user_content: str,
+        json_mode: bool = False,
+    ) -> str:
         url = f"{self.base_url}/chat/completions"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -98,8 +116,11 @@ class OthersClient(BaseLLMClient):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content},
             ],
-            "response_format": {"type": "json_object"},
         }
+
+        # Only force JSON output when explicitly requested
+        if json_mode:
+            payload["response_format"] = {"type": "json_object"}
 
         async with httpx.AsyncClient(timeout=120.0) as client:
             resp = await client.post(url, json=payload, headers=headers)
